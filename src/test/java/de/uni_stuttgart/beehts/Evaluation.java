@@ -48,14 +48,7 @@ public class Evaluation {
 							SRE s = SREBuilder.parse(model);
 							System.out.println(calculateSize(s));
 							return s;
-						}, d -> {
-							try {
-								Files.write(FileSystems.getDefault().getPath("res", file + ".transformed"),
-										d.toString().getBytes());
-							} catch (IOException e) {
-							}
-							return new Tuple<>(d.getNodes().size(), d.getEdges().size());
-						});
+						}, d -> new Tuple<>(d.getNodes().size(), d.getEdges().size()));
 
 				writeToCSV(result, FileSystems.getDefault().getPath("res", file + ".measurement"));
 			} catch (IOException e) {
@@ -74,18 +67,7 @@ public class Evaluation {
 
 				Map<Integer, Set<Tuple<Tuple<BigInteger, BigInteger>, Double>>> result = ProfilingHelpers.profile(10, 1,
 						t -> Transformer.getNewTransformer(t).getTransformed(),
-						i -> DTMCParser.parse(model), s -> {
-							Tuple<BigInteger, BigInteger> size = calculateSize(s);
-							try {
-								if (size.x.intValueExact() < 5000) {
-									Files.write(FileSystems.getDefault().getPath("res", file + ".transformed"),
-											s.toString().getBytes());
-								}
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-							return size;
-						});
+						i -> DTMCParser.parse(model), s -> calculateSize(s));
 
 				writeToCSV(result, FileSystems.getDefault().getPath("res", file + ".measurement"));
 			} catch (IOException e) {
@@ -100,7 +82,7 @@ public class Evaluation {
 			Map<Integer, Set<Tuple<Tuple<BigInteger, BigInteger>, Double>>> result;
 			Map<Integer, Integer> sizeMap = new HashMap<>();
 			System.out.println("    Sparse");
-			result = ProfilingHelpers.profile(100, 100, 1000,
+			result = ProfilingHelpers.profile(1000, 100, 1000,
 					size -> {
 						DTMC d = DTMCGenerator.generateSparseDTMC(size);
 						sizeMap.put(size, d.getEdges().size());
@@ -114,7 +96,7 @@ public class Evaluation {
 			sizeMap.clear();
 
 			System.out.println("    Dense");
-			result = ProfilingHelpers.profile(10, 50, 200,
+			result = ProfilingHelpers.profile(100, 50, 200,
 					size -> {
 						DTMC d = DTMCGenerator.generateDenseDTMC(size);
 						sizeMap.put(size, d.getEdges().size());
@@ -129,7 +111,7 @@ public class Evaluation {
 
 			System.out.println("    From SRE");
 			Map<Integer, Integer> sizeMapEdges = new HashMap<>();
-			result = ProfilingHelpers.profile(10, 800, dtmc -> Transformer.getNewTransformer(dtmc).getTransformed(),
+			result = ProfilingHelpers.profile(100, 800, dtmc -> Transformer.getNewTransformer(dtmc).getTransformed(),
 					i -> {
 						DTMC d = Transformer.getNewTransformer(SREGenerator.generateSRE(50 + i)).getTransformed();
 						sizeMap.put(i, d.getNodes().size());
