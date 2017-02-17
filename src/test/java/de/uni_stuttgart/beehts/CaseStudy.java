@@ -8,8 +8,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 
-import org.junit.Test;
-
 import de.uni_stuttgart.beehts.generator.SREGenerator;
 import de.uni_stuttgart.beehts.model.DTMC;
 import de.uni_stuttgart.beehts.model.Delta;
@@ -25,9 +23,16 @@ import de.uni_stuttgart.beehts.transformation.SRE2DTMCDelta;
 import de.uni_stuttgart.beehts.transformation.SRE2DTMCTransformer;
 import de.uni_stuttgart.beehts.transformation.Transformer;
 
+/**
+ * This used to be the profiling class. As this is not suitable as a test case
+ * and more profiling needed to be done this is deprecated in favour of
+ * Evaluation.java.
+ * 
+ * @author Tobias Beeh
+ */
+@Deprecated
 public class CaseStudy {
 
-	@Test
 	public void sre2dtmc() throws IOException {
 		Path path = FileSystems.getDefault().getPath("res", "CaseStudy.grammar").toAbsolutePath();
 		String s = String.join("\n", Files.readAllLines(path));
@@ -45,20 +50,22 @@ public class CaseStudy {
 		}, 1);
 		prof.printTotal();
 	}
-	
-	@Test
+
 	public void countSize() throws IOException {
 		Path path = FileSystems.getDefault().getPath("res", "leader4_4.tra.transformed").toAbsolutePath();
 		String s = String.join("\n", Files.readAllLines(path));
 		SRE sre = SREBuilder.parse(s);
 		System.out.println(sre.traverse(new SRE.Traverser() {
+
 			int numOfAtomicSREs = 0;
+
 			@Override
 			protected void inOrder(SRE sre) {
 				if (sre instanceof SREAtomic) {
 					numOfAtomicSREs++;
 				}
 			}
+
 			@Override
 			public String toString() {
 				return numOfAtomicSREs + "";
@@ -66,7 +73,6 @@ public class CaseStudy {
 		}).x.numOfAtomicSREs);
 	}
 
-	@Test
 	public void dtmc2sre() throws IOException {
 		Path path = FileSystems.getDefault().getPath("res", "leader6_6.tra").toAbsolutePath();
 		String s = String.join("\n", Files.readAllLines(path));
@@ -81,11 +87,8 @@ public class CaseStudy {
 		prof.printTotal();
 	}
 
-	@Test
 	public void s2dmemory() throws IOException {
-		Path path = FileSystems.getDefault().getPath("res", "CaseStudy.grammar").toAbsolutePath();
-		String s = String.join("\n", Files.readAllLines(path));
-		SRE sre = SREGenerator.generateSRE(200);//SREBuilder.parse(s);
+		SRE sre = SREGenerator.generateSRE(200);
 
 		measureTimeAndMemory(p -> {
 			return new SRE2DTMCTransformer(sre);
@@ -96,7 +99,6 @@ public class CaseStudy {
 		}, 1).printTotal();
 	}
 
-	@Test
 	public void d2smemory() throws IOException {
 		Path path = FileSystems.getDefault().getPath("res", "leader4_6.tra").toAbsolutePath();
 		String s = String.join("\n", Files.readAllLines(path));

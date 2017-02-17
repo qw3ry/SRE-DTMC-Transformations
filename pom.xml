@@ -2,11 +2,11 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.uni-stuttgart.beehts</groupId>
-  <artifactId>SREsForCoWolf</artifactId>
+  <artifactId>SRE-DTMC-Transformations</artifactId>
   <packaging>jar</packaging>
   <version>0.0.1-SNAPSHOT</version>
-  <name>SREs for CoWolf</name>
-  <url>https://github.com/qw3ry/SREs-for-CoWolf</url>
+  <name>SRE DTMC Transformations</name>
+  <url>https://github.com/qw3ry/SRE-DTMC-Transformations</url>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
