@@ -1,6 +1,7 @@
 package de.uni_stuttgart.beehts;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import de.uni_stuttgart.beehts.model.DTMC;
 import de.uni_stuttgart.beehts.model.DTMCDelta;
@@ -15,6 +16,14 @@ public class TestModels {
 	@Test
 	public void parseSRE() {
 		SREBuilder.parse("((a:b)*0.2)[1]+c[2]");
+		assertEquals(SREBuilder.parse("\\e").toString(), "");
+		assertEquals(SREBuilder.parse("\\s").toString(), " ");
+		char[] chars = ":.,;-_#'+*~\\}][{?=)(/&%$§\"!^°<>|".toCharArray();
+		for (char c : chars) {
+			assertEquals(SREBuilder.parse("\\" + c).toString(), String.valueOf(c));
+		}
+		SREBuilder.parse("\\e[1] + ((a:\\::b)*0.2)[1]+\\1[2]");
+
 	}
 
 	@Test
@@ -25,12 +34,12 @@ public class TestModels {
 
 		// second syntax type
 		DTMCParser.parse("0 \n 1 2 \n");
-		DTMCParser.parse("0 \n 1 2 \n 0 1 0.23 a \n 0 2 0.77 b \n 1 2 1 c");
+		DTMCParser.parse("0 \n 2 \n 0 1 0.23 a \n 0 2 0.77 b \n 1 2 1 c");
 	}
 
 	@Test
 	public void applyDelta() {
-		DTMC dtmc = DTMCParser.parse("0 \n 1 2 \n 0 1 0.23 a \n 0 2 0.77 b \n 1 2 1 c");
+		DTMC dtmc = DTMCParser.parse("0 \n 2 \n 0 1 0.23 a \n 0 2 0.77 b \n 1 2 1 c");
 		Delta<DTMC> deltaDTMC = DTMCDelta.parse("0 2 b > 0 2 0.5 b\n+0 0 0.27 d", dtmc);
 		dtmc = deltaDTMC.applyChanges(dtmc);
 

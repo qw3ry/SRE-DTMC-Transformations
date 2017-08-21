@@ -1,9 +1,9 @@
 package de.uni_stuttgart.beehts.model.construction;
 
-import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import de.uni_stuttgart.beehts.model.SRE;
 import de.uni_stuttgart.beehts.model.Tuple;
@@ -68,11 +68,11 @@ class SREParser {
 	}
 
 	private static List<Token> tokenize(String s) {
-		List<String> tokens = splitAtTokens(s);
-		tokens.replaceAll(x -> x.trim());
-		List<Token> list = new ArrayList<>(tokens.size());
-		tokens.stream().filter(x -> !x.isEmpty()).forEach(x -> list.add(stringToToken(x)));
-		return list;
+		return splitAtTokens(s).stream()
+				.map(x -> x.trim())
+				.filter(x -> !x.isEmpty())
+				.map(x -> stringToToken(x))
+				.collect(Collectors.toList());
 	}
 
 	private static SRE buildSRE(List<Token> tokens) {
@@ -130,12 +130,13 @@ class SREParser {
 				break;
 			}
 			case IDENTIFIER: {
+				String content = tokens.get(i).content;
 				if (lookingForDelimiter) {
-					throw new InputMismatchException(
-							"Was looking for a delimiter, got an identifier: " + tokens.get(i).content);
+					throw new InputMismatchException("Was looking for a delimiter, got an identifier: " + content);
 				}
+				content = applyEscapeSequences(content);
 				int rate = getRate(tokens, i + 1);
-				sres.add(new Tuple<>(SREBuilder.atomic(tokens.get(i).content), rate));
+				sres.add(new Tuple<>(SREBuilder.atomic(content), rate));
 				if (rate >= 0)
 					i += 3;
 				lookingForDelimiter = true;
@@ -220,6 +221,46 @@ class SREParser {
 		}
 	}
 
+	/**
+	 * Apply the escape sequences supported by the parser.
+	 * 
+	 * Supported escape sequences (note that \ is escaped as neccessary in java
+	 * string literals):<br>
+	 * {@code "" == applyEscapeSequences("\\e")}<br>
+	 * {@code " " == applyEscapeSequences("\\s")}<br>
+	 * For other characters after '\', the character itself is placed there:<br>
+	 * {@code "\\" == applyEscapeSequences("\\\\")}<br>
+	 * {@code "x" == applyEscapeSequences("\\x")}
+	 * 
+	 * @param content
+	 *            The string with the escape sequences.
+	 * @return The same string with the escape sequences replaced by literals.
+	 */
+	private static String applyEscapeSequences(String content) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < content.length(); i++) {
+			if (content.charAt(i) == '\\') {
+				i++;
+				if (i >= content.length()) {
+					throw new IllegalArgumentException();
+				}
+				switch (content.charAt(i)) {
+				case 'e':
+					break; // empty string - ignore.
+				case 's':
+					sb.append(' ');
+					break;
+				default:
+					sb.append(content.charAt(i));
+					break;
+				}
+			} else {
+				sb.append(content.charAt(i));
+			}
+		}
+		return sb.toString();
+	}
+
 	private static int getRate(List<Token> tokens, int i) {
 		if (i + 2 < tokens.size() && tokens.get(i).type == Token.Type.BRACKET_OPEN
 				&& tokens.get(i + 1).type == Token.Type.RATE && tokens.get(i + 2).type == Token.Type.BRACKET_CLOSE) {
@@ -251,7 +292,7 @@ class SREParser {
 		default:
 			if (x.matches("\\d+(\\.\\d+)?")) {
 				return new Token(Token.Type.RATE, x);
-			} else if (x.matches("[A-Za-z_\\\\]\\w*")) {
+			} else if (x.matches("(\\\\[A-Za-z0-9]|(\\w|\\\\.)+)")) {
 				return new Token(Token.Type.IDENTIFIER, x);
 			} else {
 				throw new InputMismatchException("Could not parse the following string: " + x);
@@ -277,6 +318,10 @@ class SREParser {
 				tokens.add(s.charAt(i) + "");
 				lastIndex = i + 1;
 				break;
+			case '\\':
+				// escape sequence incoming, using next character as literal.
+				i++;
+				// treat this as normal text, therefore fallthrough
 			default:
 				break;
 			}

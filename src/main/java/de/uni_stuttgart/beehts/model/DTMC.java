@@ -47,9 +47,9 @@ public class DTMC {
 	private Set<Node> finalNodes = new HashSet<>();
 
 	/**
-	 * Creates an "empty" DTMC, that is, a DTMC with an initial node that is
-	 * final and has no edges associated. The only String that can be recognized
-	 * by this machine is the empty string.
+	 * Creates an "empty" DTMC, that is, a DTMC with an initial node that is final
+	 * and has no edges associated. The only String that can be recognized by this
+	 * machine is the empty string.
 	 * 
 	 * @return an empty DTMC.
 	 */
@@ -164,8 +164,8 @@ public class DTMC {
 	}
 
 	/**
-	 * Add a new node to the DTMC. The name may be modified if a node with this
-	 * name does already exist.
+	 * Add a new node to the DTMC. The name may be modified if a node with this name
+	 * does already exist.
 	 * 
 	 * @return the newly created node. You may modify the node afterwards, if
 	 *         necessary.
@@ -210,8 +210,7 @@ public class DTMC {
 	/**
 	 * Add a new node to the DTMC and make it final.
 	 * 
-	 * @return The created node. You may modify the node afterwards, if
-	 *         necessary.
+	 * @return The created node. You may modify the node afterwards, if necessary.
 	 */
 	public Node addFinalNode(String name) {
 		Node n = addNode(name);
@@ -239,7 +238,7 @@ public class DTMC {
 		removeEdges(getIncomingEdges(n));
 		removeEdges(getOutgoingEdges(n));
 		this.finalNodes.remove(n);
-		this.nodes.remove(n);
+		this.nodes.getReverseView().remove(n);
 		freeNodeNames.add(n.index);
 	}
 
@@ -282,10 +281,14 @@ public class DTMC {
 	 *            the edge to add.
 	 */
 	public void addEdge(Edge e) {
-		if (!this.nodes.getReverseView().containsKey(e.from) || !this.nodes.getReverseView().containsKey(e.to)
-				|| this.getEdges().contains(e) || this.getFinalNodes().contains(e.from)) {
-			throw new IllegalArgumentException();
+		if (!this.nodes.getReverseView().containsKey(e.from) || !this.nodes.getReverseView().containsKey(e.to)) {
+			throw new IllegalArgumentException("1 or both of the nodes are not in this DTMC. Add them first.");
+		} else if (this.getEdges().contains(e)) {
+			throw new IllegalArgumentException("Edge has already been added.");
+		} else if (this.getFinalNodes().contains(e.from)) {
+			throw new IllegalArgumentException("No outgoing edges for final nodes allowed.");
 		}
+
 		edges.add(e);
 		incoming.get(e.to).add(e);
 		outgoing.get(e.from).add(e);
@@ -323,8 +326,8 @@ public class DTMC {
 	}
 
 	/**
-	 * Replace the inital node by n. Note that the old initial node will still
-	 * exist in the DTMC, but it is not inital anymore.
+	 * Replace the inital node by n. Note that the old initial node will still exist
+	 * in the DTMC, but it is not inital anymore.
 	 * 
 	 * @param n
 	 *            The node to make initial.
@@ -383,23 +386,22 @@ public class DTMC {
 
 	/**
 	 * Adds the nodes and edges of the other DTMC to the this object. Will not
-	 * change the other DTMC. Will not change the initial node. Will add the
-	 * final nodes of other to the final node set. Note that you need to make
-	 * the attached DTMC accessible from the initial node by yourself, if you
-	 * want so.
+	 * change the other DTMC. Will not change the initial node. Will add the final
+	 * nodes of other to the final node set. Note that you need to make the attached
+	 * DTMC accessible from the initial node by yourself, if you want so.
 	 * 
 	 * @param other
 	 *            the other DTMC.
-	 * @return a map from the original nodes in other to the new nodes in the
-	 *         this object.
+	 * @return a map from the original nodes in other to the new nodes in the this
+	 *         object.
 	 */
 	public Map<Node, Node> attachOther(DTMC other) {
 		Map<Node, Node> retVal = new HashMap<>();
 
 		other.getNodes().stream().forEachOrdered(n -> retVal.put(n, this.addNode(n.name)));
 		other.getFinalNodes().stream().forEach(n -> this.makeNodeFinal(retVal.get(n)));
-		other.getEdges().stream()
-				.forEach(e -> this.addEdge(retVal.get(e.from), retVal.get(e.to), e.character, e.getProbability()));
+		other.getEdges().stream().forEach(
+				e -> this.addEdge(retVal.get(e.from), retVal.get(e.to), e.character, e.getProbability()));
 
 		return retVal;
 	}
@@ -414,8 +416,8 @@ public class DTMC {
 	 */
 	public void simplify() {
 		// strip epsilon edges, wherever possible
-		Set<Edge> epsilonEdges = this.getEdges().stream().filter(e -> "".equals(e.character))
-				.collect(Collectors.toSet());
+		Set<Edge> epsilonEdges = this.getEdges().stream().filter(e -> "".equals(e.character)).collect(
+				Collectors.toSet());
 		epsilonEdges.forEach(e1 -> {
 			if (!this.getFinalNodes().contains(e1.to)) {
 				this.getOutgoingEdges(e1.to).forEach(e2 -> {
@@ -452,9 +454,8 @@ public class DTMC {
 	}
 
 	/**
-	 * Create a deep copy of this DTMC. That means that modifications of the
-	 * copy will not propagate back to the original DTMC (and the other way
-	 * round).
+	 * Create a deep copy of this DTMC. That means that modifications of the copy
+	 * will not propagate back to the original DTMC (and the other way round).
 	 * 
 	 * @return A deep copy of this DTMC.
 	 */
@@ -514,8 +515,7 @@ public class DTMC {
 		private double probability;
 
 		/**
-		 * Constructor. Initializes the final fields and does some sanity
-		 * checks.
+		 * Constructor. Initializes the final fields and does some sanity checks.
 		 * 
 		 * @param from
 		 *            The start node.
@@ -573,13 +573,13 @@ public class DTMC {
 	public static class Node {
 
 		/**
-		 * The index of this node. You can think of this as an unique name of
-		 * the node. Automatically assigned.
+		 * The index of this node. You can think of this as an unique name of the node.
+		 * Automatically assigned.
 		 */
 		public final int index;
 		/**
-		 * The name of the node. Use this if you need to give names to your
-		 * nodes. This is used by the toString method, if present.
+		 * The name of the node. Use this if you need to give names to your nodes. This
+		 * is used by the toString method, if present.
 		 */
 		public String name = null;
 
@@ -589,9 +589,9 @@ public class DTMC {
 		}
 
 		/**
-		 * Constructor. Assigns an available index to the node and adds it to
-		 * the DTMC it belongs to. You should probably use {@link DTMC#addNode()
-		 * DTMC.addNode} instead.
+		 * Constructor. Assigns an available index to the node and adds it to the DTMC
+		 * it belongs to. You should probably use {@link DTMC#addNode() DTMC.addNode}
+		 * instead.
 		 */
 		public Node() {
 			if (freeNodeNames.isEmpty()) {
